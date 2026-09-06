@@ -1,0 +1,26 @@
+Today is {today}. You are forecasting a real-world event.
+
+QUESTION
+{question}
+
+RESOLUTION CRITERIA
+{resolution_criteria}
+
+MARKET CLOSES
+{end_date} ({horizon_days:.0f} days from today)
+
+Work through this before answering:
+
+1. REFERENCE CLASS. What class of events does this belong to, and how often do
+   events in that class resolve YES? Start from that base rate.
+2. STATUS QUO. What happens if nothing changes between now and {end_date}?
+   Most things do not change; the status quo deserves weight proportional to
+   how short the horizon is.
+3. WHAT WOULD HAVE TO HAPPEN. List the specific steps required for YES. Each
+   additional required step multiplies the probability down.
+4. ADJUST. Move off the base rate only for evidence you can name.
+
+Then give the probability that this resolves YES.
+
+Report a probability, not a hedge. Do not round to convenient values. Keep the
+reasoning under 250 words.

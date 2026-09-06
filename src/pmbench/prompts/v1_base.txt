@@ -1,0 +1,16 @@
+Today is {today}. You are forecasting a real-world event.
+
+QUESTION
+{question}
+
+RESOLUTION CRITERIA
+{resolution_criteria}
+
+MARKET CLOSES
+{end_date} ({horizon_days:.0f} days from today)
+
+Give the probability that this resolves YES.
+
+Report a probability, not a hedge. 0.5 means you genuinely have no information;
+if you have any, say so with a number that is not 0.5. Do not round to
+convenient values. Keep the reasoning under 200 words.

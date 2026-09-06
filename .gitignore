@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+data/*.db
+data/*.db-wal
+data/*.db-shm
+reports/*.png
+reports/*.csv
+.pytest_cache/
+reports/smoke/

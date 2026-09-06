@@ -1,0 +1,96 @@
+# Model configurations under test.
+#
+# CONTAMINATION CONTROL — read this before changing anything here.
+#
+# A forecast is only scientifically meaningful if the model could not have
+# memorised the answer. The filter in eligibility.py requires
+#
+#     market.end_date > effective_cutoff(model)
+#
+# so `effective_cutoff` is the single most load-bearing number in this repo.
+# Getting it wrong silently converts the whole benchmark into a memory test.
+#
+# `cutoff_basis` records HOW we know it, because "I asked the model" is not
+# evidence — models routinely misreport their own cutoff:
+#
+#   documented              A date published by Anthropic. Put the URL in
+#                           `cutoff_source`. Preferred.
+#   release_date            The model's public release date. Always a SAFE
+#                           over-estimate: training cutoff necessarily precedes
+#                           release. Use when the cutoff isn't published.
+#   first_observed          Auto-probed: the UTC date on which this harness
+#                           first successfully called the model, recorded in the
+#                           `model_observations` table. Also a safe
+#                           over-estimate (you cannot call a model before it
+#                           ships) and requires no outside knowledge, but it
+#                           over-estimates by however long the model has been
+#                           out, which throws away eligible markets.
+#
+# Over-estimating the cutoff costs you sample size. Under-estimating it
+# invalidates your results. When in doubt, over-estimate.
+
+[[model]]
+name              = "opus5-high"
+model_id          = "claude-opus-5"
+effort            = "high"
+thinking          = "adaptive"
+supports_temperature = false     # 400 on Opus 5 — sampling params were removed
+web_search        = false
+effective_cutoff  = "first_observed"
+cutoff_basis      = "first_observed"
+cutoff_source     = "auto-probed; replace with a documented date to recover sample size"
+price_in_per_mtok  = 5.00
+price_out_per_mtok = 25.00
+
+[[model]]
+name              = "opus5-low"
+model_id          = "claude-opus-5"
+effort            = "low"
+thinking          = "adaptive"
+supports_temperature = false
+web_search        = false
+effective_cutoff  = "first_observed"
+cutoff_basis      = "first_observed"
+cutoff_source     = "auto-probed"
+price_in_per_mtok  = 5.00
+price_out_per_mtok = 25.00
+
+[[model]]
+name              = "opus5-search"
+model_id          = "claude-opus-5"
+effort            = "high"
+thinking          = "adaptive"
+supports_temperature = false
+web_search        = true          # NB: breaks the cutoff guarantee by design
+effective_cutoff  = "first_observed"
+cutoff_basis      = "first_observed"
+cutoff_source     = "auto-probed"
+price_in_per_mtok  = 5.00
+price_out_per_mtok = 25.00
+
+[[model]]
+name              = "sonnet5"
+model_id          = "claude-sonnet-5"
+effort            = "high"
+thinking          = "adaptive"
+supports_temperature = false
+web_search        = false
+effective_cutoff  = "first_observed"
+cutoff_basis      = "first_observed"
+cutoff_source     = "auto-probed"
+price_in_per_mtok  = 2.00
+price_out_per_mtok = 10.00
+
+[[model]]
+name              = "haiku45-temp"
+model_id          = "claude-haiku-4-5"
+effort            = ""            # Haiku 4.5 rejects output_config.effort
+thinking          = "off"
+supports_temperature = true       # the one current model that still takes it
+temperature       = 1.0
+web_search        = false
+effective_cutoff  = "2025-02-01"
+cutoff_basis      = "documented"
+cutoff_source     = "https://docs.claude.com/en/docs/about-claude/models/overview"
+price_in_per_mtok  = 1.00
+price_out_per_mtok = 5.00
