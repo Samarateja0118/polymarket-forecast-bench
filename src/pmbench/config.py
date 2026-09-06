@@ -7,7 +7,14 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timezone
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
+
+# Load .env on import so a credential never has to be typed into a shell (where
+# it lands in history) or pasted anywhere it would be recorded. .env is
+# gitignored; .env.example is the tracked template.
+load_dotenv(REPO_ROOT / ".env")
 DATA_DIR = REPO_ROOT / "data"
 REPORT_DIR = REPO_ROOT / "reports"
 CONFIG_DIR = REPO_ROOT / "configs"
