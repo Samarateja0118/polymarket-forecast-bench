@@ -177,7 +177,10 @@ def build_request(cfg: ModelConfig, prompt: str, *, structured: bool = True) -> 
     """Assemble the Messages API request for one sample."""
     req: dict[str, Any] = {
         "model": cfg.model_id,
-        "max_tokens": 8000,
+        # Adaptive thinking spends tokens before the JSON starts, and a
+        # truncated response fails the parse and burns the sample. This is a
+        # ceiling, not a spend.
+        "max_tokens": 16000,
         "system": SYSTEM,
         "messages": [{"role": "user", "content": prompt}],
     }

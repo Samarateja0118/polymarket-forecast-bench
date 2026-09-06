@@ -80,3 +80,34 @@ def test_build_all_survives_missing_market_prices(tmp_path):
     for r in rs:
         r.market_price = None
     assert build_all(rs, tmp_path)
+
+
+def test_watermark_is_drawn_and_noted_in_the_csv(tmp_path):
+    """A PNG of stub numbers is indistinguishable from a real one in a slide
+    deck. The mark has to survive into both artefacts."""
+    written = build_all(rows(), tmp_path, watermark="SYNTHETIC")
+    csvs = [p for p in written if p.suffix == ".csv"]
+    assert csvs
+    for c in csvs:
+        assert c.read_text().startswith("# SYNTHETIC")
+
+
+def test_no_watermark_by_default(tmp_path):
+    for c in (p for p in build_all(rows(), tmp_path) if p.suffix == ".csv"):
+        assert not c.read_text().startswith("#")
+
+
+def test_watermark_helper_is_a_noop_when_unset():
+    from pmbench.report import _watermark
+
+    class Ax:
+        transAxes = object()
+
+        def __init__(self): self.n = 0
+        def text(self, *a, **k): self.n += 1
+
+    ax = Ax()
+    _watermark(ax, None)
+    assert ax.n == 0
+    _watermark(ax, "SYNTHETIC")
+    assert ax.n == 1

@@ -202,6 +202,14 @@ Paired, because both arms score the same markets and the market-to-market
 variance is enormous — an unpaired test will not see a real difference through
 it.
 
+> **The numbers below are not a result.** They come from `scripts/smoke.py`,
+> whose "model" is a deliberately overconfident stub and whose outcomes are
+> synthesised. They show what the output *looks like*. No forecast in this
+> repository has yet been made by an actual model — see [Status](#status).
+> Figures generated from synthetic outcomes are stamped `SYNTHETIC` and their
+> CSVs carry a matching comment line, so a stray PNG cannot be mistaken for a
+> finding later.
+
 ```
 baseline                 n    model     base     delta              95% CI       p    skill
 --------------------------------------------------------------------------------------------
@@ -209,9 +217,6 @@ always_0.5             150   0.3744   0.2500   +0.1244 [+0.0591,+0.1940]   0.000
 category_base_rate     150   0.3744   0.1577   +0.2166 [+0.1371,+0.2968]   0.000   -1.374
 market_price           150   0.3744   0.1028   +0.2715 [+0.1897,+0.3552]   0.000   -2.641
 ```
-
-*(That table is from `scripts/smoke.py`, whose "model" is a deliberately
-overconfident stub. It is what the output looks like, not a result.)*
 
 ---
 

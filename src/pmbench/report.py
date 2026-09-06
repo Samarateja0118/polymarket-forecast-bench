@@ -76,6 +76,20 @@ def _label_ends(ax, entries: list[tuple[float, str, str]], *, min_gap: float = 0
                     color=color, fontsize=9, va="center", annotation_clip=False)
 
 
+def _watermark(ax, text: str | None) -> None:
+    """Stamp a figure whose outcomes did not come from the world.
+
+    A chart of stub-forecaster numbers is indistinguishable from a real one once
+    it is a PNG in a slide deck, and that is exactly how a fake result ends up
+    in front of an interviewer. Drawn on top of the data, not behind it.
+    """
+    if not text:
+        return
+    ax.text(0.5, 0.5, text, transform=ax.transAxes, fontsize=46, color="#d03b3b",
+            alpha=0.20, ha="center", va="center", rotation=28, zorder=20,
+            fontweight="bold", clip_on=False)
+
+
 def _fig(w: float = 8.0, h: float = 5.5):
     fig, ax = plt.subplots(figsize=(w, h), dpi=160)
     fig.patch.set_facecolor(SURFACE)
@@ -91,9 +105,14 @@ def _save(fig, path: Path, *, tight: bool = True) -> Path:
     return path
 
 
-def _csv(path: Path, header: Sequence[str], rows: Sequence[Sequence]) -> Path:
+def _csv(path: Path, header: Sequence[str], rows: Sequence[Sequence],
+         watermark: str | None = None) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="") as fh:
+        if watermark:
+            # A comment line rather than a column: it is the first thing a human
+            # sees on open, and it survives being pasted into a spreadsheet.
+            fh.write(f"# {watermark} — not a real result\n")
         w = csv.writer(fh)
         w.writerow(header)
         w.writerows(rows)
@@ -103,7 +122,8 @@ def _csv(path: Path, header: Sequence[str], rows: Sequence[Sequence]) -> Path:
 # --------------------------------------------------------------------------
 
 
-def reliability_diagram(rows: Sequence[Row], out: Path, *, n_bins: int = 10) -> list[Path]:
+def reliability_diagram(rows: Sequence[Row], out: Path, *, n_bins: int = 10,
+                        watermark: str | None = None) -> list[Path]:
     """Predicted probability vs observed frequency. The diagonal is perfect
     calibration; above it is underconfident, below it is overconfident."""
     fig, ax = _fig()
@@ -161,13 +181,15 @@ def reliability_diagram(rows: Sequence[Row], out: Path, *, n_bins: int = 10) -> 
     ax.legend(frameon=False, fontsize=9, labelcolor=INK_2, loc="upper left")
     _label_ends(ax, ends)
     # tight_layout would undo the right margin the labels live in.
+    _watermark(ax, watermark)
     p1 = _save(fig, out, tight=False)
     p2 = _csv(out.with_suffix(".csv"),
-              ["series", "bin_lo", "bin_hi", "n", "mean_pred", "freq_actual"], table)
+              ["series", "bin_lo", "bin_hi", "n", "mean_pred", "freq_actual"], table, watermark)
     return [p1, p2]
 
 
-def baseline_chart(rows: Sequence[Row], out: Path) -> list[Path]:
+def baseline_chart(rows: Sequence[Row], out: Path, *,
+                   watermark: str | None = None) -> list[Path]:
     """Model Brier against the market price on the same markets, per config."""
     groups = by_config(rows)
     names, model_b, market_b = [], [], []
@@ -207,13 +229,15 @@ def baseline_chart(rows: Sequence[Row], out: Path) -> list[Path]:
     # with a mark.
     ax.legend(frameon=False, fontsize=9, labelcolor=INK_2, ncol=2,
               loc="upper center", bbox_to_anchor=(0.5, -0.13 - 0.4 / max(len(names), 1)))
+    _watermark(ax, watermark)
     p1 = _save(fig, out)
     p2 = _csv(out.with_suffix(".csv"), ["config", "brier_model", "brier_market"],
-              list(zip(names, model_b, market_b)))
+              list(zip(names, model_b, market_b)), watermark)
     return [p1, p2]
 
 
-def abstention_chart(rows: Sequence[Row], out: Path) -> list[Path]:
+def abstention_chart(rows: Sequence[Row], out: Path, *,
+                     watermark: str | None = None) -> list[Path]:
     """Brier as the most-disagreeing forecasts are dropped. A flat line means
     ensemble spread carries no signal."""
     fig, ax = _fig()
@@ -238,13 +262,15 @@ def abstention_chart(rows: Sequence[Row], out: Path) -> list[Path]:
     ax.legend(frameon=False, fontsize=9, labelcolor=INK_2, loc="upper right")
     fig.subplots_adjust(right=0.74)
     _label_ends(ax, ends)
+    _watermark(ax, watermark)
     p1 = _save(fig, out, tight=False)
     p2 = _csv(out.with_suffix(".csv"),
-              ["config", "keep_frac", "n", "brier", "spearman_err_vs_sd"], table)
+              ["config", "keep_frac", "n", "brier", "spearman_err_vs_sd"], table, watermark)
     return [p1, p2]
 
 
-def horizon_chart(rows: Sequence[Row], out: Path) -> list[Path]:
+def horizon_chart(rows: Sequence[Row], out: Path, *,
+                  watermark: str | None = None) -> list[Path]:
     """Does forecast quality decay with horizon length?"""
     fig, ax = _fig()
     table = []
@@ -275,13 +301,15 @@ def horizon_chart(rows: Sequence[Row], out: Path) -> list[Path]:
     ax.legend(frameon=False, fontsize=9, labelcolor=INK_2, loc="upper left")
     fig.subplots_adjust(right=0.82)
     _label_ends(ax, ends)
+    _watermark(ax, watermark)
     p1 = _save(fig, out, tight=False)
     p2 = _csv(out.with_suffix(".csv"),
-              ["config", "bucket", "n", "brier_model", "brier_market"], table)
+              ["config", "bucket", "n", "brier_model", "brier_market"], table, watermark)
     return [p1, p2]
 
 
-def category_chart(rows: Sequence[Row], out: Path, config_name: str | None = None) -> list[Path]:
+def category_chart(rows: Sequence[Row], out: Path, config_name: str | None = None,
+                   *, watermark: str | None = None) -> list[Path]:
     """Where the model is least bad, next to the market on the same questions."""
     rs = [r for r in rows if config_name is None or r.config_name == config_name]
     data = by_category(rs)
@@ -311,18 +339,21 @@ def category_chart(rows: Sequence[Row], out: Path, config_name: str | None = Non
     ax.scatter([], [], s=100, color=SERIES[0], label="model")
     ax.legend(frameon=False, fontsize=9, labelcolor=INK_2, ncol=2,
               loc="upper center", bbox_to_anchor=(0.5, -0.13 - 0.4 / max(len(cats), 1)))
+    _watermark(ax, watermark)
     p1 = _save(fig, out)
     p2 = _csv(out.with_suffix(".csv"), ["category", "n", "brier_model", "brier_market"],
-              [[c, data[c][0].n, data[c][0].brier, data[c][1]] for c in cats])
+              [[c, data[c][0].n, data[c][0].brier, data[c][1]] for c in cats], watermark)
     return [p1, p2]
 
 
-def build_all(rows: Sequence[Row], out_dir: Path) -> list[Path]:
+def build_all(rows: Sequence[Row], out_dir: Path,
+              watermark: str | None = None) -> list[Path]:
+    """Render every figure. Pass `watermark` whenever the outcomes are not real."""
     out_dir.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
-    written += reliability_diagram(rows, out_dir / "reliability.png")
-    written += baseline_chart(rows, out_dir / "baselines.png")
-    written += abstention_chart(rows, out_dir / "abstention.png")
-    written += horizon_chart(rows, out_dir / "horizon.png")
-    written += category_chart(rows, out_dir / "category.png")
+    written += reliability_diagram(rows, out_dir / "reliability.png", watermark=watermark)
+    written += baseline_chart(rows, out_dir / "baselines.png", watermark=watermark)
+    written += abstention_chart(rows, out_dir / "abstention.png", watermark=watermark)
+    written += horizon_chart(rows, out_dir / "horizon.png", watermark=watermark)
+    written += category_chart(rows, out_dir / "category.png", watermark=watermark)
     return written

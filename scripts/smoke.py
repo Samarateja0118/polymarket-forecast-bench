@@ -147,7 +147,7 @@ def main() -> int:
             print(f"FAIL: Platt slope should be < 1 for overconfident input, got {cal.platt_a:.3f}")
             ok = False
 
-    for p in report.build_all(rows, Path(args.out)):
+    for p in report.build_all(rows, Path(args.out), watermark="SYNTHETIC"):
         print(f"wrote {p}")
 
     print("\nSMOKE TEST:", "PASS" if ok else "FAIL")

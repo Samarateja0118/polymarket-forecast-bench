@@ -170,7 +170,18 @@ def cmd_report(args) -> None:
 
     if not args.no_figures:
         out = Path(args.out or REPORT_DIR)
-        for p in report.build_all(rows, out):
+        # Belt and braces: a figure must never leave here unmarked if any of the
+        # outcomes behind it were synthesised. Detected from the database rather
+        # than trusted from a flag, so it cannot be forgotten.
+        synthetic = conn.execute(
+            "SELECT COUNT(*) FROM markets m JOIN forecasts f ON f.market_id = m.id "
+            "JOIN scores s ON s.forecast_id = f.id WHERE m.outcome_source = 'SYNTHETIC'"
+        ).fetchone()[0]
+        mark = "SYNTHETIC" if synthetic else None
+        if mark:
+            print(f"\n!! {synthetic} scored forecasts have SYNTHETIC outcomes — "
+                  f"figures will be watermarked and are not a result.\n")
+        for p in report.build_all(rows, out, watermark=mark):
             print(f"wrote {p}")
 
 
