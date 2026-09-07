@@ -105,3 +105,25 @@ def test_forecast_market_runs_n_samples_and_paraphrases():
     ))
     assert fc.n_samples == 4 and fc.input_tokens == 40
     assert len(set(seen)) == 2   # two distinct framings cycled
+
+
+def test_single_surviving_sample_has_undefined_spread_not_zero():
+    """Regression from the first live run: 3 of 6 samples died on transient
+    503s. Recording sd=0.0 for a lone survivor reads as *perfect* agreement and
+    would put it in the most-trusted bucket of the abstention curve."""
+    fc = aggregate([Sample(0.4, "a"), Sample(float("nan"), "", error="503")])
+    assert fc.n_samples == 1
+    assert fc.probability == 0.4
+    assert fc.ensemble_sd is None
+    assert fc.confidence is None
+
+
+def test_two_samples_do_have_a_spread():
+    fc = aggregate([Sample(0.4, "a"), Sample(0.6, "b")])
+    assert fc.ensemble_sd is not None and fc.ensemble_sd > 0
+    assert fc.confidence is not None
+
+
+def test_total_failure_leaves_spread_undefined():
+    fc = aggregate([Sample(float("nan"), "", error="503")])
+    assert fc.ensemble_sd is None and fc.confidence is None and fc.error == "503"

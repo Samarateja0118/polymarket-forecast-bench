@@ -45,6 +45,7 @@ class ModelConfig:
 
     name: str
     model_id: str
+    provider: str = "anthropic"      # "anthropic" | "gemini"
     effort: str = "high"
     thinking: str = "adaptive"          # "adaptive" | "off"
     supports_temperature: bool = False
@@ -74,6 +75,10 @@ class ModelConfig:
                 f"or set an explicit effective_cutoff in configs/models.toml."
             )
         return date.fromisoformat(seen)
+
+    @property
+    def is_gemini(self) -> bool:
+        return self.provider == "gemini"
 
     def cost_usd(self, input_tokens: int, output_tokens: int) -> float:
         return (

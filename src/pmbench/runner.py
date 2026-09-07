@@ -150,9 +150,10 @@ async def probe(conn, cfgs: list[ModelConfig], sample_fn: SampleFn | None = None
 
 
 def _default_sampler() -> SampleFn:
-    import anthropic
+    """Routes per config.provider; each provider's client is built on first use."""
+    from .providers import build_router
 
-    return anthropic_sampler(anthropic.AsyncAnthropic())
+    return build_router()
 
 
 @dataclass

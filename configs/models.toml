@@ -94,3 +94,60 @@ cutoff_basis      = "documented"
 cutoff_source     = "https://docs.claude.com/en/docs/about-claude/models/overview"
 price_in_per_mtok  = 1.00
 price_out_per_mtok = 5.00
+
+# ---------------------------------------------------------------------------
+# Gemini. Model IDs below were read from the live models.list endpoint, not
+# from memory — several postdate any static list.
+#
+# NOTE ON TEMPERATURE: Gemini accepts it; current Anthropic models reject it.
+# That makes cross-provider ensemble-spread comparisons a confound, not a
+# result. `gemini38-flash-fixed` is the controlled arm — same model, temperature
+# off — so the Gemini side can be compared to the Anthropic side on the same
+# weaker diversity axis. See providers.py.
+#
+# PRICES ARE PLACEHOLDERS. Fill from ai.google.dev/pricing; until then the
+# cost_usd column reads 0 for these configs and `pmbench status` understates
+# spend.
+
+[[model]]
+name              = "gemini31-pro"
+model_id          = "gemini-3.1-pro-preview"
+provider          = "gemini"
+effort            = ""            # Gemini uses thinking_level, not effort
+thinking          = "high"
+supports_temperature = false
+web_search        = false
+effective_cutoff  = "first_observed"
+cutoff_basis      = "first_observed"
+cutoff_source     = "auto-probed; a -preview model may change under a long run"
+price_in_per_mtok  = 0.0
+price_out_per_mtok = 0.0
+
+[[model]]
+name              = "gemini38-flash-temp"
+model_id          = "gemini-3.8-flash"
+provider          = "gemini"
+effort            = ""
+thinking          = "low"
+supports_temperature = true       # the TRUE temperature-ensemble arm
+temperature       = 1.0
+web_search        = false
+effective_cutoff  = "first_observed"
+cutoff_basis      = "first_observed"
+cutoff_source     = "auto-probed"
+price_in_per_mtok  = 0.0
+price_out_per_mtok = 0.0
+
+[[model]]
+name              = "gemini38-flash-fixed"
+model_id          = "gemini-3.8-flash"
+provider          = "gemini"
+effort            = ""
+thinking          = "low"
+supports_temperature = false      # controlled twin: same model, no temperature
+web_search        = false
+effective_cutoff  = "first_observed"
+cutoff_basis      = "first_observed"
+cutoff_source     = "auto-probed"
+price_in_per_mtok  = 0.0
+price_out_per_mtok = 0.0

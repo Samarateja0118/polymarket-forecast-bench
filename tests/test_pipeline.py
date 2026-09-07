@@ -245,3 +245,67 @@ def test_a_dispute_on_either_uma_field_holds_the_resolution():
                              umaResolutionStatus="disputed")).outcome is None
     assert decide(raw_market(closed=True, outcomePrices='["1","0"]',
                              umaResolutionStatuses='["disputed"]')).outcome is None
+
+
+# ---------------- provider routing ----------------
+
+
+def test_router_dispatches_on_provider_and_reports_missing_credentials(monkeypatch):
+    """A Gemini-only run must not require Anthropic credentials, and a missing
+    key must surface as a recorded sample error rather than a crash mid-run."""
+    import asyncio
+
+    from pmbench.config import ModelConfig
+    from pmbench.providers import build_router
+
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    router = build_router()
+    cfg = ModelConfig(name="g", model_id="gemini-3.8-flash", provider="gemini")
+    s = asyncio.run(router(cfg, "prompt"))
+    assert s.error and "GEMINI_API_KEY" in s.error
+
+
+def test_router_uses_an_injected_backend_without_touching_credentials():
+    import asyncio
+
+    from pmbench.config import ModelConfig
+    from pmbench.forecast import Sample
+    from pmbench.providers import build_router
+
+    async def fake(cfg, prompt):
+        return Sample(0.42, "stub")
+
+    router = build_router({"gemini": fake})
+    cfg = ModelConfig(name="g", model_id="gemini-3.8-flash", provider="gemini")
+    assert asyncio.run(router(cfg, "p")).probability == 0.42
+
+
+def test_gemini_config_only_sends_temperature_when_supported():
+    from pmbench.config import ModelConfig
+    from pmbench.providers import build_gemini_config
+
+    off = build_gemini_config(ModelConfig(name="a", model_id="m", provider="gemini"))
+    assert off.temperature is None
+    on = build_gemini_config(ModelConfig(
+        name="b", model_id="m", provider="gemini",
+        supports_temperature=True, temperature=1.0))
+    assert on.temperature == 1.0
+
+
+def test_gemini_thinking_maps_off_to_a_zero_budget():
+    from pmbench.config import ModelConfig
+    from pmbench.providers import build_gemini_config
+
+    off = build_gemini_config(ModelConfig(name="a", model_id="m", provider="gemini",
+                                          thinking="off"))
+    assert off.thinking_config.thinking_budget == 0
+    lvl = build_gemini_config(ModelConfig(name="b", model_id="m", provider="gemini",
+                                          thinking="high"))
+    # The SDK coerces the string to a ThinkingLevel enum, which is how we
+    # know "high" is a value it actually accepts.
+    assert str(lvl.thinking_config.thinking_level.value).lower() == "high"
+    # "adaptive" is Anthropic vocabulary; Gemini should just be left alone.
+    none = build_gemini_config(ModelConfig(name="c", model_id="m", provider="gemini",
+                                           thinking="adaptive"))
+    assert none.thinking_config is None

@@ -142,7 +142,10 @@ def abstention_curve(rows: Sequence[Row]) -> AbstentionCurve:
     the ensemble spread is noise and the abstention rule is worthless — which
     is itself a publishable result about the aggregation method.
     """
-    usable = [r for r in rows if r.ensemble_sd is not None]
+    # NaN as well as None: a NaN sd sorts unpredictably and would silently
+    # land in the "most agreement" bucket.
+    usable = [r for r in rows
+              if r.ensemble_sd is not None and r.ensemble_sd == r.ensemble_sd]
     if not usable:
         return AbstentionCurve([], [], [], float("nan"))
     err = np.array([abs(r.probability - r.outcome) for r in usable])

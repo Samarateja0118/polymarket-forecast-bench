@@ -86,8 +86,12 @@ class Forecast:
 
     probability: float          # 0-1, validated; trimmed mean of the samples
     reasoning: str              # reasoning from the sample nearest the estimate
-    confidence: float           # derived from ensemble spread, NOT self-reported
-    ensemble_sd: float
+    # Both None when fewer than two samples survived: with one sample there is
+    # no agreement to measure. Recording 0.0 there would read as *perfect*
+    # agreement and make a lone sample look maximally trustworthy to the
+    # abstention analysis — the opposite of the truth.
+    confidence: float | None    # derived from ensemble spread, NOT self-reported
+    ensemble_sd: float | None
     samples: list[Sample] = field(default_factory=list)
     input_tokens: int = 0
     output_tokens: int = 0
@@ -136,14 +140,14 @@ def aggregate(samples: list[Sample]) -> Forecast:
     tok_out = sum(s.output_tokens for s in samples)
     if not ok:
         first = next((s.error for s in samples if s.error), "no samples")
-        return Forecast(float("nan"), "", 0.0, float("nan"), samples,
+        return Forecast(float("nan"), "", None, None, samples,
                         tok_in, tok_out, error=first)
     probs = [s.probability for s in ok]
     est = trimmed_mean(probs)
-    sd = statistics.stdev(probs) if len(probs) > 1 else 0.0
+    sd = statistics.stdev(probs) if len(probs) > 1 else None
     nearest = min(ok, key=lambda s: abs(s.probability - est))
-    return Forecast(est, nearest.reasoning, spread_confidence(sd), sd,
-                    samples, tok_in, tok_out)
+    conf = None if sd is None else spread_confidence(sd)
+    return Forecast(est, nearest.reasoning, conf, sd, samples, tok_in, tok_out)
 
 
 # --------------------------------------------------------------------------
