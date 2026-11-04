@@ -1,5 +1,7 @@
 # pmbench — a self-labeling forecasting benchmark for LLMs
 
+[![ci](https://github.com/Samarateja0118/polymarket-forecast-bench/actions/workflows/ci.yml/badge.svg)](https://github.com/Samarateja0118/polymarket-forecast-bench/actions/workflows/ci.yml)
+
 Prediction markets are a rare thing: a dataset that labels itself. You record a
 forecast, and weeks later the world tells you whether you were right, for free,
 with a timestamp. Most LLM evaluations have to construct ground truth by hand.
